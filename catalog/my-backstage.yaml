@@ -1,0 +1,16 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: my-backstage
+  description: 社内 Backstage ポータル — ソフトウェアカタログ・TechDocs
+  annotations:
+    github.com/project-slug: rikukaInoue/my-backstage
+  tags:
+    - backstage
+    - portal
+    - developer-platform
+spec:
+  type: website
+  lifecycle: experimental
+  owner: guests

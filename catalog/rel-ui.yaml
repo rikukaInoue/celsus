@@ -1,0 +1,22 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rel-ui
+  description: デザインシステム — Figma Variables + Panda CSS + React Aria コンポーネントライブラリ
+  annotations:
+    github.com/project-slug: rikukaInoue/rel-ui
+  tags:
+    - react
+    - panda-css
+    - design-system
+    - storybook
+    - typescript
+  links:
+    - url: https://rikukainoue.github.io/rel-ui/
+      title: Storybook
+      icon: docs
+spec:
+  type: library
+  lifecycle: experimental
+  owner: guests

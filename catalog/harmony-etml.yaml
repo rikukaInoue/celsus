@@ -1,0 +1,20 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: harmony-etml
+  description: ハーモニーモチーフのサイト（vigorment.rikuka.dev）
+  annotations:
+    github.com/project-slug: rikukaInoue/harmony-etml
+  tags:
+    - web
+    - frontend
+  links:
+    - url: https://vigorment.rikuka.dev
+      title: Production
+      icon: dashboard
+spec:
+  type: website
+  lifecycle: production
+  owner: guests
+  system: rikuka

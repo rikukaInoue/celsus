@@ -1,0 +1,20 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rikukadev
+  description: rikuka.dev ブログ・技術ドキュメントサイト
+  annotations:
+    github.com/project-slug: rikukaInoue/rikukadev
+  tags:
+    - astro
+    - blog
+  links:
+    - url: https://rikuka.dev
+      title: Production
+      icon: dashboard
+spec:
+  type: website
+  lifecycle: production
+  owner: guests
+  system: rikuka

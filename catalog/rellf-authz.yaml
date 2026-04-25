@@ -1,0 +1,25 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rellf-authz
+  description: Amazon Verified Permissions (AVP) + Cedar によるマルチプロダクト認可サービス
+  annotations:
+    github.com/project-slug: rikukaInoue/rellf-authz
+  tags:
+    - go
+    - aws
+    - avp
+    - cedar
+    - lambda
+  links:
+    - url: https://authz.rikuka.dev
+      title: Production
+      icon: dashboard
+spec:
+  type: service
+  lifecycle: experimental
+  owner: guests
+  system: rellf
+  dependsOn:
+    - component:rellf-auth

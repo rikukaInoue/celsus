@@ -1,0 +1,22 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: rellf
+  description: マルチプロダクト向け認証・認可基盤
+  tags:
+    - go
+    - aws
+    - cognito
+spec:
+  owner: guests
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: rikuka
+  description: rikuka.dev サイト群
+  tags:
+    - astro
+spec:
+  owner: guests
