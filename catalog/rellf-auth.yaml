@@ -6,7 +6,7 @@ metadata:
   description: Cognito を内部に隠した独自 OIDC Provider。認証基盤。
   annotations:
     github.com/project-slug: rikukaInoue/rellf-auth
-    backstage.io/techdocs-ref: url:https://github.com/rikukaInoue/rellf-auth
+    backstage.io/techdocs-ref: dir:../../rellf-auth
   tags:
     - go
     - aws
