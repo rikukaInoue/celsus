@@ -23,3 +23,49 @@ spec:
   system: rellf
   dependsOn:
     - component:rellf-auth
+  providesApis:
+    - rellf-authz-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: rellf-authz-api
+  description: rellf-authz の認可判定・ポリシー管理 API
+  tags:
+    - rest
+    - cedar
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: guests
+  system: rellf
+  definition: |
+    openapi: "3.0.0"
+    info:
+      title: rellf-authz API
+      version: "1.0"
+    servers:
+      - url: https://authz.rikuka.dev
+    paths:
+      /api/is-authorized:
+        post:
+          summary: 認可判定（Cedar ポリシー評価）
+      /api/permissions:
+        get:
+          summary: 権限一覧
+      /api/permissions/{service}:
+        get:
+          summary: サービス別権限一覧
+      /api/policies:
+        get:
+          summary: ポリシー一覧
+        post:
+          summary: ポリシー作成
+      /api/policies/{id}:
+        get:
+          summary: ポリシー取得
+        delete:
+          summary: ポリシー削除
+      /health:
+        get:
+          summary: ヘルスチェック

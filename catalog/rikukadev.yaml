@@ -9,6 +9,8 @@ metadata:
   tags:
     - astro
     - blog
+    - mdx
+    - mermaid
   links:
     - url: https://rikuka.dev
       title: Production

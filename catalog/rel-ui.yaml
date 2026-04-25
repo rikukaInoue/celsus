@@ -3,7 +3,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: rel-ui
-  description: デザインシステム — Figma Variables + Panda CSS + React Aria コンポーネントライブラリ
+  description: "デザインシステム — Figma Variables + Panda CSS + React Aria コンポーネントライブラリ"
   annotations:
     github.com/project-slug: rikukaInoue/rel-ui
   tags:
@@ -20,3 +20,7 @@ spec:
   type: library
   lifecycle: experimental
   owner: guests
+  dependencyOf:
+    - component:react-router-lambda-demo
+    - component:harmony-etml
+    - component:rikukadev

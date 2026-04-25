@@ -21,3 +21,7 @@ spec:
   lifecycle: experimental
   owner: guests
   system: rikuka
+  dependsOn:
+    - component:rellf-auth
+  consumesApis:
+    - rellf-auth-api

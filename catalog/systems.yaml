@@ -3,11 +3,16 @@ apiVersion: backstage.io/v1alpha1
 kind: System
 metadata:
   name: rellf
-  description: マルチプロダクト向け認証・認可基盤
+  description: マルチプロダクト向け認証・認可・課金基盤
   tags:
     - go
     - aws
     - cognito
+  links:
+    - url: https://auth.rikuka.dev
+      title: Auth
+    - url: https://authz.rikuka.dev
+      title: Authz
 spec:
   owner: guests
 ---
@@ -15,8 +20,12 @@ apiVersion: backstage.io/v1alpha1
 kind: System
 metadata:
   name: rikuka
-  description: rikuka.dev サイト群
+  description: rikuka.dev サイト群・プロダクト
   tags:
     - astro
+    - react
+  links:
+    - url: https://rikuka.dev
+      title: Blog
 spec:
   owner: guests
