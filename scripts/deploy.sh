@@ -10,7 +10,7 @@ IP=$(terraform output -raw public_ip)
 
 echo "==> Deploying to $IP"
 
-SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i ~/.ssh/celsus-key.pem"
 SSH_CMD="ssh $SSH_OPTS ubuntu@$IP"
 
 echo "==> Waiting for SSH..."
@@ -27,7 +27,8 @@ rsync -avz --exclude='.git' --exclude='node_modules' --exclude='.yarn/cache' \
 echo "==> Loading secrets from SSM Parameter Store..."
 $SSH_CMD 'bash -s' << 'REMOTE_SCRIPT'
 set -euo pipefail
-REGION=$(curl -s http://169.254.169.254/latest/meta-data/placement/region)
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
 
 get_param() {
   aws ssm get-parameter --region "$REGION" --name "$1" --with-decryption --query 'Parameter.Value' --output text
@@ -40,7 +41,7 @@ DOMAIN=${DOMAIN}
 POSTGRES_PASSWORD=$(get_param /celsus/postgres-password)
 AUTH_GOOGLE_CLIENT_ID=$(get_param /celsus/auth-google-client-id)
 AUTH_GOOGLE_CLIENT_SECRET=$(get_param /celsus/auth-google-client-secret)
-GITHUB_TOKEN=$(get_param /celsus/github-token)
+GITHUB_TOKEN=$(get_param /celsus/github-token 2>/dev/null || echo "")
 BASE_URL=https://${DOMAIN}
 ENVEOF
 

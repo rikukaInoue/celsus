@@ -115,6 +115,7 @@ resource "aws_ssm_parameter" "auth_google_client_secret" {
 }
 
 resource "aws_ssm_parameter" "github_token" {
+  count = var.github_token != "" ? 1 : 0
   name  = "/celsus/github-token"
   type  = "SecureString"
   value = var.github_token
@@ -202,7 +203,8 @@ resource "aws_instance" "celsus" {
     echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
     # Utilities
-    apt-get install -y git jq awscli
+    apt-get install -y git jq
+    snap install aws-cli --classic
   EOF
 
   tags = {
