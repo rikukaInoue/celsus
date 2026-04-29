@@ -54,3 +54,10 @@ e2e-test-report/
 
 # Cache
 .cache/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl
+infra/terraform.tfvars

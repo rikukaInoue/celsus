@@ -1,0 +1,3 @@
+domain           = "library.rikuka.dev"
+ssh_allowed_cidr = "YOUR_IP/32"
+key_name         = "celsus-key"
