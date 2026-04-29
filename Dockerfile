@@ -19,7 +19,8 @@ RUN --mount=type=cache,target=/app/.yarn/cache \
 
 COPY . .
 
-RUN yarn tsc && yarn build:all
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+RUN yarn tsc --skipLibCheck && yarn build:all
 
 FROM node:22-bookworm-slim
 
