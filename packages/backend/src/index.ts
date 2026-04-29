@@ -62,4 +62,7 @@ backend.add(import('@backstage/plugin-kubernetes-backend'));
 backend.add(import('@backstage/plugin-notifications-backend'));
 backend.add(import('@backstage/plugin-signals-backend'));
 
+// librarian plugin
+backend.add(import('@internal/plugin-librarian-backend'));
+
 backend.start();
