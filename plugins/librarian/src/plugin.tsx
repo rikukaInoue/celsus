@@ -4,26 +4,29 @@ import {
   ApiBlueprint,
 } from '@backstage/frontend-plugin-api';
 import {
-  createApiFactory,
   discoveryApiRef,
   fetchApiRef,
 } from '@backstage/core-plugin-api';
 import { librarianApiRef, LibrarianClient } from './api';
+import LibraryBooksIcon from '@material-ui/icons/LibraryBooks';
 
 const librarianApi = ApiBlueprint.make({
-  params: {
-    factory: createApiFactory({
+  name: 'librarian',
+  params: defineParams =>
+    defineParams({
       api: librarianApiRef,
       deps: { discoveryApi: discoveryApiRef, fetchApi: fetchApiRef },
       factory: ({ discoveryApi, fetchApi }) =>
         new LibrarianClient({ discoveryApi, fetchApi }),
     }),
-  },
 });
 
 const librarianPage = PageBlueprint.make({
+  name: 'dashboard',
   params: {
-    defaultPath: '/librarian',
+    path: '/librarian',
+    title: 'Librarian',
+    icon: <LibraryBooksIcon />,
     loader: () =>
       import('./components/LibrarianDashboard').then(m => (
         <m.LibrarianDashboard />
