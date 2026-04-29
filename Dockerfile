@@ -19,7 +19,7 @@ RUN --mount=type=cache,target=/app/.yarn/cache \
 
 COPY . .
 
-RUN yarn build:all
+RUN yarn tsc && yarn build:all
 
 FROM node:22-bookworm-slim
 
