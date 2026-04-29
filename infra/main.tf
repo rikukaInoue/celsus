@@ -90,9 +90,52 @@ resource "aws_iam_role" "celsus" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.celsus.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+resource "aws_ssm_parameter" "domain" {
+  name  = "/celsus/domain"
+  type  = "String"
+  value = var.domain
+}
+
+resource "aws_ssm_parameter" "postgres_password" {
+  name  = "/celsus/postgres-password"
+  type  = "SecureString"
+  value = var.postgres_password
+}
+
+resource "aws_ssm_parameter" "auth_google_client_id" {
+  name  = "/celsus/auth-google-client-id"
+  type  = "SecureString"
+  value = var.auth_google_client_id
+}
+
+resource "aws_ssm_parameter" "auth_google_client_secret" {
+  name  = "/celsus/auth-google-client-secret"
+  type  = "SecureString"
+  value = var.auth_google_client_secret
+}
+
+resource "aws_ssm_parameter" "github_token" {
+  name  = "/celsus/github-token"
+  type  = "SecureString"
+  value = var.github_token
+}
+
+resource "aws_iam_role_policy" "ssm" {
+  name = "celsus-ssm-access"
+  role = aws_iam_role.celsus.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ssm:GetParameter",
+        "ssm:GetParameters",
+        "ssm:GetParametersByPath"
+      ]
+      Resource = "arn:aws:ssm:${var.region}:*:parameter/celsus/*"
+    }]
+  })
 }
 
 resource "aws_s3_bucket" "celsus" {
@@ -159,7 +202,7 @@ resource "aws_instance" "celsus" {
     echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
     # Utilities
-    apt-get install -y git jq
+    apt-get install -y git jq awscli
   EOF
 
   tags = {
