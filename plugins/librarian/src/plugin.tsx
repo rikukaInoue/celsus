@@ -2,6 +2,7 @@ import {
   createFrontendPlugin,
   PageBlueprint,
   ApiBlueprint,
+  AnalyticsImplementationBlueprint,
 } from '@backstage/frontend-plugin-api';
 import {
   discoveryApiRef,
@@ -34,7 +35,33 @@ const librarianPage = PageBlueprint.make({
   },
 });
 
+const librarianAnalytics = AnalyticsImplementationBlueprint.make({
+  name: 'librarian-tracker',
+  params: defineParams =>
+    defineParams({
+      deps: { discoveryApi: discoveryApiRef, fetchApi: fetchApiRef },
+      factory: ({ discoveryApi, fetchApi }) => {
+        const client = new LibrarianClient({ discoveryApi, fetchApi });
+        return {
+          captureEvent(event) {
+            if (event.action !== 'navigate') return;
+
+            const path = event.subject;
+            const match = path.match(
+              /^\/catalog\/([^/]+)\/([^/]+)\/([^/]+)/,
+            );
+            if (match) {
+              const [, namespace, kind, name] = match;
+              const entityRef = `${kind}:${namespace}/${name}`;
+              client.recordView(entityRef).catch(() => {});
+            }
+          },
+        };
+      },
+    }),
+});
+
 export const librarianPlugin = createFrontendPlugin({
   id: 'librarian',
-  extensions: [librarianApi, librarianPage],
+  extensions: [librarianApi, librarianPage, librarianAnalytics],
 });
