@@ -15,7 +15,7 @@ services:
       retries: 5
 
   backstage:
-    build: .
+    image: ${BACKSTAGE_IMAGE:-ghcr.io/rikukainoue/celsus:latest}
     restart: unless-stopped
     depends_on:
       postgres:
