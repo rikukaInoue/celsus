@@ -1,17 +1,17 @@
 ---
-# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user
 apiVersion: backstage.io/v1alpha1
 kind: User
 metadata:
-  name: guest
+  name: taishi.inoue
+  annotations:
+    google.com/email: t.i.systems28@gmail.com
 spec:
-  memberOf: [guests]
+  memberOf: [admins]
 ---
-# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-group
 apiVersion: backstage.io/v1alpha1
 kind: Group
 metadata:
-  name: guests
+  name: admins
 spec:
   type: team
   children: []

@@ -80,7 +80,6 @@ auth:
         signIn:
           resolvers:
             - resolver: emailMatchingUserEntityAnnotation
-              dangerouslyAllowSignInWithoutUserInCatalog: true
     guest: {}
 
 scaffolder:
