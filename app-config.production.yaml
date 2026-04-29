@@ -1,16 +1,8 @@
 app:
-  # Should be the same as backend.baseUrl when using the `app-backend` plugin.
-  baseUrl: http://localhost:7007
+  baseUrl: ${BASE_URL}
 
 backend:
-  # Note that the baseUrl should be the URL that the browser and other clients
-  # should use when communicating with the backend, i.e. it needs to be
-  # reachable not just from within the backend host, but from all of your
-  # callers. When its value is "http://localhost:7007", it's strictly private
-  # and can't be reached by others.
-  baseUrl: http://localhost:7007
-  # The listener can also be expressed as a single <host>:<port> string. In this case we bind to
-  # all interfaces, the most permissive setting. The right value depends on your specific deployment.
+  baseUrl: ${BASE_URL}
   listen: ':7007'
 
   # config options: https://node-postgres.com/apis/client
@@ -29,6 +21,7 @@ backend:
       #     $file: <file-path>/ca/server.crt
 
 auth:
+  environment: production
   providers:
     google:
       production:
@@ -39,23 +32,29 @@ auth:
             - resolver: emailMatchingUserEntityAnnotation
 
 catalog:
-  # Overrides the default list locations from app-config.yaml as these contain example data.
-  # See https://backstage.io/docs/features/software-catalog/#adding-components-to-the-catalog for more details
-  # on how to get entities into the catalog.
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, API, Resource, Location, Template, User, Group]
   locations:
-    # Local example data, replace this with your production config, these are intended for demo use only.
-    # File locations are relative to the backend process, typically in a deployed context, such as in a Docker container, this will be the root
-    - type: file
-      target: ./examples/entities.yaml
-
-    # Local example template
-    - type: file
-      target: ./examples/template/template.yaml
-      rules:
-        - allow: [Template]
-
-    # Local example organizational data
     - type: file
       target: ./examples/org.yaml
       rules:
         - allow: [User, Group]
+    - type: file
+      target: ./catalog/systems.yaml
+    - type: url
+      target: https://github.com/rikukaInoue/rellf-auth/blob/main/catalog-info.yaml
+    - type: url
+      target: https://github.com/rikukaInoue/rellf-authz/blob/main/catalog-info.yaml
+    - type: file
+      target: ./catalog/rikukadev.yaml
+    - type: file
+      target: ./catalog/react-router-lambda-demo.yaml
+    - type: file
+      target: ./catalog/rel-ui.yaml
+    - type: file
+      target: ./catalog/harmony-etml.yaml
+    - type: file
+      target: ./catalog/my-backstage.yaml

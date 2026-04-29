@@ -1,0 +1,3 @@
+{$DOMAIN} {
+	reverse_proxy backstage:7007
+}
