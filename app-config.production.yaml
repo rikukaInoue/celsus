@@ -30,7 +30,13 @@ backend:
 
 auth:
   providers:
-    guest: {}
+    google:
+      production:
+        clientId: ${AUTH_GOOGLE_CLIENT_ID}
+        clientSecret: ${AUTH_GOOGLE_CLIENT_SECRET}
+        signIn:
+          resolvers:
+            - resolver: emailMatchingUserEntityAnnotation
 
 catalog:
   # Overrides the default list locations from app-config.yaml as these contain example data.
