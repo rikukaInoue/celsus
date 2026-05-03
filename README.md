@@ -26,25 +26,26 @@ infra/
 
 ## Librarian
 
-Backstageカタログの利用状況を追跡する司書プラグイン。
+組織の技術知識を管理する司書システム。Backstageプラグイン + AIエージェントで構成。
 
+**カタログ管理** (plugins/librarian):
 - エンティティ閲覧数の記録・ランキング
 - FAQ管理
 - 全文検索 / 類似エンティティ発見
 - 依存関係グラフ（影響分析）
 
-## Critic
+**AIエージェント** (services/critic):
 
-2つのAIエージェント（Mitra / Aria）が異なる視点でレビュー・アドバイスするサービス。
+司書として2人のキャラクターがレビュー・アドバイスを担当する。
 
-- **Mitra** — 行動を促す人。具体的な1アクションを提案する（Double Diamondの2nd Diamond）
-- **Aria** — 構造を見せる人。問いを投げて理解を深める（Double Diamondの1st Diamond）
+- **Mitra** — 行動を促す司書。具体的な1アクションを提案する（Double Diamondの2nd Diamond）
+- **Aria** — 構造を見せる司書。問いを投げて理解を深める（Double Diamondの1st Diamond）
 
 特徴:
 - 入力タイプ自動判定（code / consultation / debate）
 - ローカルONNX embedding（API不要）
 - フィードバック学習（選択→キャラ成長）
-- CLI + Slack Bot（キャラ別Slack App）
+- CLI + Slack Bot（キャラ別Slack App: @mitra / @aria）
 
 詳細: [services/critic/](services/critic/)
 
