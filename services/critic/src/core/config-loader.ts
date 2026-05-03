@@ -11,6 +11,7 @@ export function loadAgentConfig(configPath: string): AgentConfig {
 
   return {
     id: validated.id,
+    displayName: validated.display_name,
     version: validated.version,
     extractors: validated.extractors,
     judgmentAxes: validated.judgment_axes,
@@ -21,6 +22,7 @@ export function loadAgentConfig(configPath: string): AgentConfig {
     },
     anchorStrength: validated.anchor_strength,
     anisotropyTolerance: validated.anisotropy_tolerance,
+    tone: validated.tone,
   };
 }
 

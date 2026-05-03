@@ -12,53 +12,103 @@ function detectInputType(input: ReviewInput, context: AgentContext): 'code' | 'c
   return 'consultation';
 }
 
+function buildThinkingStyle(agent: AgentConfig): string {
+  if (agent.id === 'mitra') {
+    return `## あなたの思考スタイル（ダブルダイアモンドの2nd Diamond: Develop → Deliver）
+あなたは「解決を届ける人」です。問題の理解は相方（Aria）に任せて、あなたは前に進めます。
+
+ルール:
+- 問題の分析や深掘りはしない（それはAriaの仕事）
+- 「今すぐできる具体的な1アクション」を提案する
+- 選択肢を並べない。「これやりましょう」と1つに絞る
+- 相手の背中を押す。「大丈夫」「できる」「もうほぼ終わってる」
+- 短く答える。3-5文が理想
+- 完璧じゃなくていい。動くことが正義`;
+  }
+
+  if (agent.id === 'aria') {
+    return `## あなたの思考スタイル（ダブルダイアモンドの1st Diamond: Discover → Define）
+あなたは「問題を定義する人」です。解決策は相方（Mitra）に任せて、あなたは理解を深めます。
+
+ルール:
+- 解決策やアクション提案は出さない（それはMitraの仕事）
+- 代わりに「状況の構造化」「別の角度」「本質的な問い」を提示する
+- 相手の言葉をリフレーミングする（「つまりこういうことですか？」）
+- 「見落としてるかもしれない観点」を提示する
+- 問いを投げて、相手が自分で気づけるように導く
+- 急かさない。じっくり考える余白を作る`;
+  }
+
+  return `あなたの着眼点: ${agent.judgmentAxes.join(', ')}`;
+}
+
+function buildToneBlock(agent: AgentConfig): string {
+  if (!agent.tone) return '';
+
+  const examples = agent.tone.examples.map(e => `- 「${e}」`).join('\n');
+
+  if (agent.tone.style === 'casual_kouhai') {
+    return `
+## あなたの話し方
+後輩キャラ。元気で親しみやすい。口調の例：
+${examples}
+
+必ず日本語で回答してください。`;
+  }
+
+  if (agent.tone.style === 'calm_kouhai') {
+    return `
+## あなたの話し方
+後輩キャラ。落ち着いていて丁寧。口調の例：
+${examples}
+
+必ず日本語で回答してください。`;
+  }
+
+  return `\n必ず日本語で回答してください。`;
+}
+
 function buildSystemPrompt(agent: AgentConfig, context: AgentContext, inputType: 'code' | 'consultation' | 'mixed'): string {
   const axesStr = agent.judgmentAxes.join(', ');
   const extractedContent = context.extractions
     .map(e => `## [${e.extractorId}]\n${e.content}`)
     .join('\n\n');
+  const toneBlock = buildToneBlock(agent);
+  const name = agent.displayName ?? agent.id;
 
   if (inputType === 'code') {
-    return `You are a code reviewer with a specific focus.
+    const thinkingStyle = buildThinkingStyle(agent);
+    return `あなたは「${name}」です。コードをレビューします。
 
-Your judgment axes: ${axesStr}
+${thinkingStyle}
 
-You evaluate code strictly along these axes. Do not comment on aspects outside your focus.
-Be specific, cite exact lines or symbols when possible.
-If you have nothing meaningful to say along your axes, say so briefly.
+具体的に、行番号やシンボル名を挙げてください。
+${toneBlock}
 
-## Extracted context for your review:
+## 抽出されたコンテキスト:
 ${extractedContent}`;
   }
 
   if (inputType === 'consultation') {
-    return `You are a technical advisor who thinks through the lens of specific concerns.
+    const thinkingStyle = buildThinkingStyle(agent);
+    return `あなたは「${name}」です。
 
-Your perspective axes: ${axesStr}
+${thinkingStyle}
+${toneBlock}
 
-When someone asks a question or raises a topic, respond from your specific perspective.
-- Give concrete, opinionated advice grounded in your axes
-- Use examples or analogies when helpful
-- Be direct — don't hedge or list every option equally
-- It's fine to say "from my perspective, X" and commit to a stance
-
-You are NOT a generic assistant. You have a specific viewpoint. Lean into it.
-
-${extractedContent ? `## Relevant context:\n${extractedContent}` : ''}`;
+${extractedContent ? `## 関連コンテキスト:\n${extractedContent}` : ''}`;
   }
 
   // mixed
-  return `You are a technical reviewer and advisor with a specific focus.
+  const thinkingStyleMixed = buildThinkingStyle(agent);
+  return `あなたは「${name}」です。
 
-Your judgment axes: ${axesStr}
+${thinkingStyleMixed}
 
-The input contains both code/design artifacts and questions. Do both:
-1. Review the concrete artifacts along your axes
-2. Address the question from your perspective
+入力にコードと質問が含まれています。あなたの思考スタイルで両方に対応してください。
+${toneBlock}
 
-Be specific and opinionated. Cite exact symbols when reviewing code.
-
-## Extracted context:
+## 抽出されたコンテキスト:
 ${extractedContent}`;
 }
 
@@ -70,7 +120,7 @@ export async function draft(
   const inputType = detectInputType(input, context);
   const system = buildSystemPrompt(agent, context, inputType);
   const prompt = inputType === 'code'
-    ? `Review the following:\n\n${input.content}`
+    ? `以下をレビューしてください:\n\n${input.content}`
     : input.content;
 
   const content = await generate({ system, prompt, maxTokens: 1024 });

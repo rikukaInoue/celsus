@@ -17,6 +17,7 @@ export const ExtractorDefSchema = z.object({
 
 export const AgentConfigSchema = z.object({
   id: z.string(),
+  display_name: z.string().optional(),
   version: z.number().int().positive(),
   extractors: z.object({
     code: z.array(ExtractorDefSchema),
@@ -35,6 +36,11 @@ export const AgentConfigSchema = z.object({
   }),
   anchor_strength: z.number().min(0).max(1),
   anisotropy_tolerance: z.enum(['low', 'medium', 'high']),
+  tone: z.object({
+    language: z.string(),
+    style: z.string(),
+    examples: z.array(z.string()),
+  }).optional(),
 });
 
 export const FeedbackInputSchema = z.object({

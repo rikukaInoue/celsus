@@ -3,10 +3,12 @@ import type { AgentResponse } from '../../agents/pipeline.js';
 
 export function formatResponse(response: AgentResponse): string {
   if (response.suppressed) {
-    return chalk.dim(`  ─── ${response.agentId} (α=${response.alpha.toFixed(2)}) ── [suppressed]`);
+    return chalk.dim(`  ─── ${response.agentId} ── [suppressed]`);
   }
 
-  const header = chalk.bold.cyan(`  ─── ${response.agentId} (α=${response.alpha.toFixed(2)}) ${'─'.repeat(40)}`);
+  const color = response.agentId === 'mitra' ? chalk.bold.yellow : chalk.bold.blue;
+  const emoji = response.agentId === 'mitra' ? '🟠' : '🔵';
+  const header = color(`  ${emoji} ${response.agentId} ${'─'.repeat(45)}`);
   const body = response.content
     .split('\n')
     .map(line => `  ${line}`)

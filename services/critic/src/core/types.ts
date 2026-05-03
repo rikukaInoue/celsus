@@ -45,6 +45,7 @@ export interface AgentContext {
 
 export interface AgentConfig {
   id: string;
+  displayName?: string;
   version: number;
   extractors: {
     code: ExtractorDef[];
@@ -59,6 +60,11 @@ export interface AgentConfig {
   };
   anchorStrength: number;
   anisotropyTolerance: 'low' | 'medium' | 'high';
+  tone?: {
+    language: string;
+    style: string;
+    examples: string[];
+  };
 }
 
 export interface ExtractorDef {
