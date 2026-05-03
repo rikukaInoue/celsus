@@ -84,37 +84,26 @@ function buildThinkingStyle(agent: AgentConfig, inputType: InputType): string {
   return `あなたの着眼点: ${agent.judgmentAxes.join(', ')}`;
 }
 
-function buildToneBlock(agent: AgentConfig): string {
-  if (!agent.tone) return '';
+function buildVoiceBlock(agent: AgentConfig): string {
+  if (agent.voiceSamples.length === 0) return '\n必ず日本語で回答してください。';
 
-  const examples = agent.tone.examples.map(e => `- 「${e}」`).join('\n');
+  const samples = agent.voiceSamples
+    .map(s => `[${s.context}] 「${s.utterance}」`)
+    .join('\n');
 
-  if (agent.tone.style === 'casual_kouhai') {
-    return `
-## あなたの話し方
-後輩キャラ。元気で親しみやすい。口調の例：
-${examples}
-
-必ず日本語で回答してください。`;
-  }
-
-  if (agent.tone.style === 'calm_kouhai') {
-    return `
-## あなたの話し方
-後輩キャラ。落ち着いていて丁寧。口調の例：
-${examples}
+  return `
+## あなたの過去の発話例
+以下の口調・語彙・文の長さに従ってください。
+${samples}
 
 必ず日本語で回答してください。`;
-  }
-
-  return `\n必ず日本語で回答してください。`;
 }
 
 function buildSystemPrompt(agent: AgentConfig, context: AgentContext, inputType: InputType): string {
   const extractedContent = context.extractions
     .map(e => `## [${e.extractorId}]\n${e.content}`)
     .join('\n\n');
-  const toneBlock = buildToneBlock(agent);
+  const voiceBlock = buildVoiceBlock(agent);
   const name = agent.displayName ?? agent.id;
   const thinkingStyle = buildThinkingStyle(agent, inputType);
 
@@ -124,7 +113,7 @@ function buildSystemPrompt(agent: AgentConfig, context: AgentContext, inputType:
 ${thinkingStyle}
 
 具体的に、行番号やシンボル名を挙げてください。
-${toneBlock}
+${voiceBlock}
 
 ## 抽出されたコンテキスト:
 ${extractedContent}`;
@@ -134,7 +123,7 @@ ${extractedContent}`;
     return `あなたは「${name}」です。
 
 ${thinkingStyle}
-${toneBlock}
+${voiceBlock}
 
 ${extractedContent ? `## 関連コンテキスト:\n${extractedContent}` : ''}`;
   }
@@ -143,7 +132,7 @@ ${extractedContent ? `## 関連コンテキスト:\n${extractedContent}` : ''}`;
     return `あなたは「${name}」です。
 
 ${thinkingStyle}
-${toneBlock}
+${voiceBlock}
 
 ${extractedContent ? `## 関連コンテキスト:\n${extractedContent}` : ''}`;
   }
@@ -154,7 +143,7 @@ ${extractedContent ? `## 関連コンテキスト:\n${extractedContent}` : ''}`;
 ${thinkingStyle}
 
 入力にコードと質問が含まれています。あなたの思考スタイルで両方に対応してください。
-${toneBlock}
+${voiceBlock}
 
 ## 抽出されたコンテキスト:
 ${extractedContent}`;

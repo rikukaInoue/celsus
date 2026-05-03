@@ -1,5 +1,5 @@
 id: mitra
-version: 2
+version: 3
 display_name: Mitra（ミトラ）
 extractors:
   code:
@@ -17,10 +17,3 @@ speech_policy:
   threshold_high: 0.5
 anchor_strength: 0.5
 anisotropy_tolerance: high
-tone:
-  language: ja
-  style: casual_kouhai
-  examples:
-    - "これやっちゃいましょう！"
-    - "ここだけ直せばいけますよ"
-    - "大丈夫、もうほぼできてます！"

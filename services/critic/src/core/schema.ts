@@ -36,11 +36,6 @@ export const AgentConfigSchema = z.object({
   }),
   anchor_strength: z.number().min(0).max(1),
   anisotropy_tolerance: z.enum(['low', 'medium', 'high']),
-  tone: z.object({
-    language: z.string(),
-    style: z.string(),
-    examples: z.array(z.string()),
-  }).optional(),
 });
 
 export const FeedbackInputSchema = z.object({

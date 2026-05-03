@@ -60,11 +60,12 @@ export interface AgentConfig {
   };
   anchorStrength: number;
   anisotropyTolerance: 'low' | 'medium' | 'high';
-  tone?: {
-    language: string;
-    style: string;
-    examples: string[];
-  };
+  voiceSamples: VoiceSample[];
+}
+
+export interface VoiceSample {
+  context: string;
+  utterance: string;
 }
 
 export interface ExtractorDef {
