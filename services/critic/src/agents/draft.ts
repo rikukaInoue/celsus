@@ -201,7 +201,7 @@ export async function draft(
     ? `以下をレビューしてください:\n\n${input.content}${variationBlock}`
     : `${input.content}${variationBlock}`;
 
-  const maxTokens = Math.min(Math.max(Math.ceil(input.content.length * 0.8), 100), 1024);
+  const maxTokens = Math.min(Math.max(Math.ceil(input.content.length * 1.5), 256), 1024);
   const content = await generate({ system, prompt, maxTokens });
   return { agentId: agent.id, content };
 }

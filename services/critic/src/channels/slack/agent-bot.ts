@@ -4,9 +4,33 @@ import { runPipeline, type PipelineDeps } from '../../agents/pipeline.js';
 import { getAgents, getAgent } from '../../agents/registry.js';
 import { recordFeedback } from '../../feedback/collector.js';
 import { reactionToSignal } from '../../feedback/signals.js';
-import type { ReviewInput } from '../../core/types.js';
+import type { ReviewInput, Message } from '../../core/types.js';
 
 const utteranceMap = new Map<string, { agentId: string; utteranceId: string }>();
+
+async function fetchThreadMessages(app: App, channel: string, threadTs: string): Promise<Message[]> {
+  try {
+    const result = await app.client.conversations.replies({
+      channel,
+      ts: threadTs,
+      limit: 200,
+    });
+
+    if (!result.messages) return [];
+
+    return result.messages
+      .map(m => ({
+        id: m.ts ?? '',
+        source: 'slack' as const,
+        author: m.bot_id ? 'agent' : (m.user ?? 'unknown'),
+        content: (m.text ?? '').replace(/<@[A-Z0-9]+>/g, '').trim(),
+        timestamp: new Date(parseFloat(m.ts ?? '0') * 1000),
+        modality: 'prose' as const,
+      }));
+  } catch {
+    return [];
+  }
+}
 
 export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
   const agent = getAgent(agentId);
@@ -19,22 +43,28 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
       return;
     }
 
-    const message = normalizeSlackInput(content, event.user ?? 'unknown', event.thread_ts ?? event.ts);
+    // Fetch thread history if in a thread
+    const threadTs = event.thread_ts ?? event.ts;
+    const priorMessages = event.thread_ts
+      ? await fetchThreadMessages(app, event.channel, event.thread_ts)
+      : [];
+
+    const message = normalizeSlackInput(content, event.user ?? 'unknown', threadTs);
 
     const input: ReviewInput = {
       id: message.id,
       content: message.content,
       language: message.modality === 'code' ? 'typescript' : undefined,
+      priorMessages,
     };
 
-    // Run pipeline with only this agent, named mode
     const result = await runPipeline(input, [agent], deps, { speakingMode: 'named' });
     const response = result.responses.find(r => !r.suppressed);
 
     if (response) {
       const msg = await say({
         text: response.content,
-        thread_ts: event.thread_ts ?? event.ts,
+        thread_ts: threadTs,
       });
 
       if (msg.ts) {
@@ -43,7 +73,6 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
     }
   });
 
-  // Reactions as feedback
   app.event('reaction_added', async ({ event }) => {
     const signal = reactionToSignal(event.reaction);
     if (!signal) return;

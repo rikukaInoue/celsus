@@ -53,7 +53,11 @@ const bots: { agentId: string; botToken?: string; appToken?: string }[] = [
     });
 
     setupAgentBot(app, bot.agentId, deps);
-    await app.start();
-    console.log(`⚡ ${bot.agentId} bot is running (socket mode)`);
+    try {
+      await app.start();
+      console.log(`⚡ ${bot.agentId} bot is running (socket mode)`);
+    } catch (err) {
+      console.error(`❌ ${bot.agentId} failed to start: ${(err as Error).message}`);
+    }
   }
 })();
