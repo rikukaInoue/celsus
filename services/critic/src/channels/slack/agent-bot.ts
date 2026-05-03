@@ -99,6 +99,45 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
     }
   });
 
+  const positivePatterns = [
+    /なるほど/, /ありがとう/, /いいね/, /いい感じ/, /助かる/, /さすが/,
+    /たしかに/, /それだ/, /わかった/, /すごい/, /おお/,
+  ];
+  const negativePatterns = [
+    /違う/, /そうじゃな/, /雑/, /的外れ/, /意味わからん/, /ずれて/,
+    /それは違/, /ちがくない/, /微妙/, /う[ーん]+/, /いや[、。]/,
+  ];
+
+  function classifyReply(text: string): number {
+    const posScore = positivePatterns.filter(p => p.test(text)).length;
+    const negScore = negativePatterns.filter(p => p.test(text)).length;
+    if (posScore > negScore) return 0.5;
+    if (negScore > posScore) return -0.3;
+    return 0;
+  }
+
+  async function recordImplicitFeedback(userReply: string, threadTs: string) {
+    const signal = classifyReply(userReply);
+    if (signal === 0) return;
+
+    const recentUtterances = [...utteranceMap.entries()]
+      .filter(([ts]) => ts > threadTs)
+      .sort(([a], [b]) => b.localeCompare(a));
+
+    const lastBotUtterance = recentUtterances[0];
+    if (!lastBotUtterance) return;
+
+    const [, utterance] = lastBotUtterance;
+
+    await recordFeedback({
+      utteranceId: utterance.utteranceId,
+      source: 'human_implicit',
+      axis: 'general',
+      signal,
+      context: { userReply, type: 'implicit_chat' },
+    });
+  }
+
   async function maybeSummonPeer(app: App, responseContent: string, threadTs: string, channel: string) {
     if (peers.length === 0) return;
     if (calledPeerInThread.has(threadTs)) return;
@@ -188,6 +227,8 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
 
     const content = (msg.text ?? '').trim();
     if (!content) return;
+
+    await recordImplicitFeedback(content, msg.thread_ts);
 
     const priorMessages = await fetchThreadMessages(app, msg.channel, msg.thread_ts);
     const normalized = normalizeSlackInput(content, msg.user ?? 'unknown', msg.thread_ts);
