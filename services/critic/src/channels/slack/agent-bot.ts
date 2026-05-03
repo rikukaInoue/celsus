@@ -100,25 +100,54 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
   });
 
   const positivePatterns = [
-    /なるほど/, /ありがとう/, /いいね/, /いい感じ/, /助かる/, /さすが/,
-    /たしかに/, /それだ/, /わかった/, /すごい/, /おお/,
+    // 同意・納得
+    /なるほど/, /たしかに/, /それだ/, /そうそう/, /それそれ/, /そうなんだ/,
+    /わかる/, /わかった/, /理解した/, /納得/, /腑に落ち/,
+    // 感謝
+    /ありがとう/, /助かる/, /助かった/, /サンクス/, /thx/i, /thanks/i,
+    // 称賛
+    /すごい/, /さすが/, /いいね/, /いい感じ/, /ナイス/, /nice/i,
+    /おお/, /おー/, /へぇ/, /すげ/,
+    // 採用・実行
+    /やってみ/, /試してみ/, /それで行/, /そうし/, /採用/,
+    // 深掘り要求（興味がある=肯定的）
+    /もっと教えて/, /詳しく/, /もう少し聞/, /続けて/,
+    // 笑い（好意的反応）
+    /[wW]{2,}/, /笑/, /ウケる/, /おもしろ/,
   ];
   const negativePatterns = [
-    /違う/, /そうじゃな/, /雑/, /的外れ/, /意味わからん/, /ずれて/,
-    /それは違/, /ちがくない/, /微妙/, /う[ーん]+/, /いや[、。]/,
+    // 否定・訂正
+    /違う/, /ちがう/, /そうじゃな/, /それは違/, /ちがくない/,
+    /間違/, /不正解/, /ハズレ/, /はずれ/,
+    // 品質への不満
+    /雑/, /的外れ/, /ずれて/, /微妙/, /イマイチ/, /いまいち/,
+    /薄い/, /浅い/, /表面的/, /ありきたり/, /テンプレ/,
+    // 理解不能
+    /意味わからん/, /意味不明/, /何言って/, /は[？?]$/,
+    // 拒否
+    /いや[、。]/, /いらな/, /求めてな/, /そういうことじゃ/,
+    /うーん/, /う～ん/, /んー/,
+    // 長さへの不満
+    /長い/, /長すぎ/, /短く/, /もっと簡潔/,
   ];
 
-  function classifyReply(text: string): number {
+  function classifyReply(text: string): { signal: number; axis: string } {
     const posScore = positivePatterns.filter(p => p.test(text)).length;
     const negScore = negativePatterns.filter(p => p.test(text)).length;
-    if (posScore > negScore) return 0.5;
-    if (negScore > posScore) return -0.3;
-    return 0;
+
+    if (/長い|長すぎ|短く|簡潔/.test(text)) return { signal: -0.3, axis: 'length' };
+    if (/雑|浅い|薄い|表面的/.test(text)) return { signal: -0.4, axis: 'depth' };
+    if (/もっと教えて|詳しく/.test(text)) return { signal: 0.3, axis: 'interest' };
+    if (/やってみ|試してみ|それで行|採用/.test(text)) return { signal: 0.7, axis: 'action_taken' };
+
+    if (posScore > negScore) return { signal: 0.5, axis: 'general' };
+    if (negScore > posScore) return { signal: -0.3, axis: 'general' };
+    return { signal: 0, axis: 'none' };
   }
 
   async function recordImplicitFeedback(userReply: string, threadTs: string) {
-    const signal = classifyReply(userReply);
-    if (signal === 0) return;
+    const result = classifyReply(userReply);
+    if (result.signal === 0) return;
 
     const recentUtterances = [...utteranceMap.entries()]
       .filter(([ts]) => ts > threadTs)
@@ -132,8 +161,8 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
     await recordFeedback({
       utteranceId: utterance.utteranceId,
       source: 'human_implicit',
-      axis: 'general',
-      signal,
+      axis: result.axis,
+      signal: result.signal,
       context: { userReply, type: 'implicit_chat' },
     });
   }
