@@ -7,6 +7,7 @@ import { reactionToSignal } from '../../feedback/signals.js';
 import type { ReviewInput, Message } from '../../core/types.js';
 
 const utteranceMap = new Map<string, { agentId: string; utteranceId: string }>();
+const activeThreads = new Set<string>();
 
 async function fetchThreadMessages(app: App, channel: string, threadTs: string): Promise<Message[]> {
   try {
@@ -59,8 +60,8 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
       return;
     }
 
-    // Fetch thread history if in a thread
     const threadTs = event.thread_ts ?? event.ts;
+    activeThreads.add(threadTs);
     const priorMessages = event.thread_ts
       ? await fetchThreadMessages(app, event.channel, event.thread_ts)
       : [];
@@ -131,6 +132,42 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
         });
       } catch {
         // ignore reply failures
+      }
+    }
+  });
+
+  app.message(async ({ message, say }) => {
+    if (message.subtype) return;
+    const msg = message as { text?: string; thread_ts?: string; ts: string; channel: string; user?: string; bot_id?: string };
+    if (msg.bot_id) return;
+    if (!msg.thread_ts) return;
+    if (!activeThreads.has(msg.thread_ts)) return;
+    if ((msg.text ?? '').includes(`<@`)) return;
+
+    const content = (msg.text ?? '').trim();
+    if (!content) return;
+
+    const priorMessages = await fetchThreadMessages(app, msg.channel, msg.thread_ts);
+    const normalized = normalizeSlackInput(content, msg.user ?? 'unknown', msg.thread_ts);
+
+    const input: ReviewInput = {
+      id: normalized.id,
+      content: normalized.content,
+      language: normalized.modality === 'code' ? 'typescript' : undefined,
+      priorMessages,
+    };
+
+    const result = await runPipeline(input, [agent], deps, { speakingMode: 'named' });
+    const response = result.responses.find(r => !r.suppressed);
+
+    if (response) {
+      const posted = await say({
+        text: response.content,
+        thread_ts: msg.thread_ts,
+      });
+
+      if (posted.ts) {
+        utteranceMap.set(posted.ts, { agentId: response.agentId, utteranceId: response.utteranceId });
       }
     }
   });
