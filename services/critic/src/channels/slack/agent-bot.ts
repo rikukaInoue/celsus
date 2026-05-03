@@ -73,6 +73,20 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
     }
   });
 
+  const reactionReplies: Record<string, string[]> = agentId === 'mitra'
+    ? {
+        thumbsup: ['ありがとうございます！', 'うれしいです！', 'イェイ'],
+        thumbsdown: ['あっ すみません…！ 次はもっとちゃんと考えます', 'ごめんなさい… もうちょっと考え直しますね'],
+        heavy_check_mark: ['よかった！', 'おっ 合ってました？ うれしい'],
+        thinking_face: ['うーん 分かりにくかったですかね？ もう少し詳しく聞きます？'],
+      }
+    : {
+        thumbsup: ['ありがとうございます', 'お役に立てたなら良かったです'],
+        thumbsdown: ['すみません… もう少し整理し直しますね', '的外れでしたか… 別の角度から考えてみます'],
+        heavy_check_mark: ['よかったです', '確認できて安心しました'],
+        thinking_face: ['……もう少し掘り下げた方がいいですかね？'],
+      };
+
   app.event('reaction_added', async ({ event }) => {
     const signal = reactionToSignal(event.reaction);
     if (!signal) return;
@@ -87,5 +101,21 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
       signal: signal.signal,
       context: { reaction: event.reaction, slackUser: event.user },
     });
+
+    const replies = reactionReplies[event.reaction];
+    if (replies) {
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      try {
+        const channel = event.item.channel;
+        const threadTs = event.item.ts;
+        await app.client.chat.postMessage({
+          channel,
+          text: reply,
+          thread_ts: threadTs,
+        });
+      } catch {
+        // ignore reply failures
+      }
+    }
   });
 }
