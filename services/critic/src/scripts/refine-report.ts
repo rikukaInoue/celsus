@@ -102,20 +102,36 @@ async function generateReport(): Promise<string> {
   return lines.join('\n');
 }
 
-async function main() {
-  const report = await generateReport();
+async function postToSlack(report: string) {
+  const botToken = process.env.MITRA_SLACK_BOT_TOKEN;
+  const channel = process.env.REFINE_REPORT_CHANNEL ?? 'general';
 
-  const slackWebhook = process.env.REFINE_REPORT_WEBHOOK;
-  if (slackWebhook) {
-    await fetch(slackWebhook, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: report }),
-    });
-    console.log('Report posted to Slack');
+  if (!botToken) {
+    console.log(report);
+    return;
+  }
+
+  const res = await fetch('https://slack.com/api/chat.postMessage', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${botToken}`,
+    },
+    body: JSON.stringify({ channel, text: report }),
+  });
+
+  const data = await res.json() as { ok: boolean; error?: string };
+  if (data.ok) {
+    console.log(`Report posted to #${channel}`);
   } else {
+    console.error(`Slack error: ${data.error}`);
     console.log(report);
   }
+}
+
+async function main() {
+  const report = await generateReport();
+  await postToSlack(report);
 
   await queryClient.end();
 }
