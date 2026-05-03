@@ -157,7 +157,7 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
       priorMessages,
     };
 
-    const result = await runPipeline(input, [agent], deps, { speakingMode: 'named' });
+    const result = await runPipeline(input, [agent], deps, { speakingMode: 'auto' });
     const response = result.responses.find(r => !r.suppressed);
 
     if (response) {
