@@ -1,0 +1,126 @@
+import 'dotenv/config';
+import { queryClient } from '../db/client.js';
+import { getAgents } from '../agents/registry.js';
+
+interface UtteranceWithFeedback {
+  id: string;
+  agent_id: string;
+  content: string;
+  avg_signal: number;
+  feedback_count: number;
+  created_at: Date;
+}
+
+async function getTopUtterances(agentId: string, limit: number): Promise<UtteranceWithFeedback[]> {
+  return queryClient`
+    SELECT u.id, u.agent_id, u.content, u.created_at,
+      AVG(f.signal) as avg_signal,
+      COUNT(f.id) as feedback_count
+    FROM agent_utterances u
+    JOIN feedback f ON f.utterance_id = u.id
+    WHERE u.agent_id = ${agentId}
+    GROUP BY u.id
+    HAVING COUNT(f.id) >= 1
+    ORDER BY AVG(f.signal) DESC
+    LIMIT ${limit}
+  ` as unknown as UtteranceWithFeedback[];
+}
+
+async function getBottomUtterances(agentId: string, limit: number): Promise<UtteranceWithFeedback[]> {
+  return queryClient`
+    SELECT u.id, u.agent_id, u.content, u.created_at,
+      AVG(f.signal) as avg_signal,
+      COUNT(f.id) as feedback_count
+    FROM agent_utterances u
+    JOIN feedback f ON f.utterance_id = u.id
+    WHERE u.agent_id = ${agentId}
+    GROUP BY u.id
+    HAVING COUNT(f.id) >= 1
+    ORDER BY AVG(f.signal) ASC
+    LIMIT ${limit}
+  ` as unknown as UtteranceWithFeedback[];
+}
+
+async function getStats(agentId: string) {
+  const [total] = await queryClient`
+    SELECT COUNT(*) as count FROM agent_utterances WHERE agent_id = ${agentId}
+  `;
+  const [withFeedback] = await queryClient`
+    SELECT COUNT(DISTINCT u.id) as count
+    FROM agent_utterances u
+    JOIN feedback f ON f.utterance_id = u.id
+    WHERE u.agent_id = ${agentId}
+  `;
+  const [avgSignal] = await queryClient`
+    SELECT AVG(f.signal) as avg
+    FROM agent_utterances u
+    JOIN feedback f ON f.utterance_id = u.id
+    WHERE u.agent_id = ${agentId}
+  `;
+  return {
+    totalUtterances: Number(total.count),
+    withFeedback: Number(withFeedback.count),
+    avgSignal: Number(avgSignal.avg ?? 0),
+  };
+}
+
+function truncate(s: string, len: number): string {
+  return s.length > len ? s.slice(0, len) + '…' : s;
+}
+
+async function generateReport(): Promise<string> {
+  const agents = getAgents();
+  const lines: string[] = ['📊 *Weekly Refine Report*\n'];
+
+  for (const agent of agents) {
+    const stats = await getStats(agent.id);
+    const top = await getTopUtterances(agent.id, 3);
+    const bottom = await getBottomUtterances(agent.id, 3);
+
+    lines.push(`*${agent.displayName ?? agent.id}*`);
+    lines.push(`発話: ${stats.totalUtterances} / フィードバック付き: ${stats.withFeedback} / 平均スコア: ${stats.avgSignal.toFixed(2)}\n`);
+
+    if (top.length > 0) {
+      lines.push('✅ *高評価の発話（voice_samples候補）*');
+      for (const u of top) {
+        lines.push(`  avg=${Number(u.avg_signal).toFixed(2)} 「${truncate(u.content, 80)}」`);
+      }
+      lines.push('');
+    }
+
+    if (bottom.length > 0 && Number(bottom[0].avg_signal) < 0) {
+      lines.push('⚠️ *低評価の発話（改善対象）*');
+      for (const u of bottom) {
+        if (Number(u.avg_signal) >= 0) break;
+        lines.push(`  avg=${Number(u.avg_signal).toFixed(2)} 「${truncate(u.content, 80)}」`);
+      }
+      lines.push('');
+    }
+  }
+
+  lines.push('_高評価の発話をvoice_samples.jsonlに追加しますか？ 👍 で承認_');
+  return lines.join('\n');
+}
+
+async function main() {
+  const report = await generateReport();
+
+  const slackWebhook = process.env.REFINE_REPORT_WEBHOOK;
+  if (slackWebhook) {
+    await fetch(slackWebhook, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: report }),
+    });
+    console.log('Report posted to Slack');
+  } else {
+    console.log(report);
+  }
+
+  await queryClient.end();
+}
+
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});

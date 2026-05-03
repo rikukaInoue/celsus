@@ -9,6 +9,7 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "sync-catalog": "tsx src/scripts/sync-catalog.ts",
+    "refine-report": "tsx src/scripts/refine-report.ts",
     "test": "vitest",
     "build": "tsup src/channels/cli/main.ts src/channels/slack/main.ts --format esm --dts",
     "typecheck": "tsc --noEmit"
