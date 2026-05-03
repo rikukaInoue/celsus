@@ -42,42 +42,57 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Sync files to EC2
-        uses: appleboy/scp-action@v0.1.7
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "docker-compose.yml,Caddyfile,app-config.yaml,app-config.production.yaml,examples/,catalog/"
-          target: /home/ubuntu/celsus
-          overwrite: true
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
 
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
-        env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: GHCR_TOKEN
-          script: |
-            echo "${GHCR_TOKEN}" | docker login ghcr.io -u rikukaInoue --password-stdin
-            cd /home/ubuntu/celsus
-            REGION=$(TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600") && curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
-            get_param() { aws ssm get-parameter --region "$REGION" --name "$1" --with-decryption --query 'Parameter.Value' --output text; }
-            DOMAIN=$(get_param /celsus/domain)
-            cat > .env <<ENVEOF
-            DOMAIN=${DOMAIN}
-            POSTGRES_PASSWORD=$(get_param /celsus/postgres-password)
-            AUTH_GOOGLE_CLIENT_ID=$(get_param /celsus/auth-google-client-id)
-            AUTH_GOOGLE_CLIENT_SECRET=$(get_param /celsus/auth-google-client-secret)
-            GITHUB_TOKEN=$(get_param /celsus/github-token)
-            BASE_URL=https://${DOMAIN}
-            BACKSTAGE_IMAGE=ghcr.io/rikukainoue/celsus:latest
-            ENVEOF
-            sed -i 's/^            //' .env
-            docker compose up -d --pull always
+      - name: Deploy via SSM Run Command
+        run: |
+          INSTANCE_ID="${{ secrets.EC2_INSTANCE_ID }}"
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters commands='[
+              "echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u rikukaInoue --password-stdin",
+              "cd /home/ubuntu/celsus && git pull origin main || true",
+              "TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H X-aws-ec2-metadata-token-ttl-seconds:21600)",
+              "REGION=$(curl -s -H X-aws-ec2-metadata-token:$TOKEN http://169.254.169.254/latest/meta-data/placement/region)",
+              "get_param() { aws ssm get-parameter --region $REGION --name $1 --with-decryption --query Parameter.Value --output text; }",
+              "DOMAIN=$(get_param /celsus/domain)",
+              "printf \"DOMAIN=%s\\nPOSTGRES_PASSWORD=%s\\nAUTH_GOOGLE_CLIENT_ID=%s\\nAUTH_GOOGLE_CLIENT_SECRET=%s\\nGITHUB_TOKEN=%s\\nBASE_URL=https://%s\\nBACKSTAGE_IMAGE=ghcr.io/rikukainoue/celsus:latest\\n\" $DOMAIN $(get_param /celsus/postgres-password) $(get_param /celsus/auth-google-client-id) $(get_param /celsus/auth-google-client-secret) $(get_param /celsus/github-token) $DOMAIN > .env",
+              "docker compose pull backstage",
+              "docker compose up -d"
+            ]' \
+            --query 'Command.CommandId' --output text)
+
+          echo "Command ID: $COMMAND_ID"
+
+          # Wait for completion
+          for i in $(seq 1 30); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query 'Status' --output text 2>/dev/null || echo "Pending")
+            echo "Status: $STATUS"
+            if [ "$STATUS" = "Success" ]; then
+              echo "Deploy successful!"
+              exit 0
+            elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then
+              aws ssm get-command-invocation \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID" \
+                --query 'StandardErrorContent' --output text
+              exit 1
+            fi
+            sleep 10
+          done
+          echo "Timeout waiting for command"
+          exit 1
