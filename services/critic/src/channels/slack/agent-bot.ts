@@ -7,7 +7,7 @@ import { reactionToSignal } from '../../feedback/signals.js';
 import type { ReviewInput, Message } from '../../core/types.js';
 
 const utteranceMap = new Map<string, { agentId: string; utteranceId: string }>();
-const activeThreads = new Set<string>();
+const activeThreads = new Map<string, Set<string>>();
 
 async function fetchThreadMessages(app: App, channel: string, threadTs: string): Promise<Message[]> {
   try {
@@ -68,7 +68,8 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
     }
 
     const threadTs = event.thread_ts ?? event.ts;
-    activeThreads.add(threadTs);
+    if (!activeThreads.has(threadTs)) activeThreads.set(threadTs, new Set());
+    activeThreads.get(threadTs)!.add(agentId);
     const priorMessages = event.thread_ts
       ? await fetchThreadMessages(app, event.channel, event.thread_ts)
       : [];
@@ -251,7 +252,8 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
     const msg = message as { text?: string; thread_ts?: string; ts: string; channel: string; user?: string; bot_id?: string };
     if (msg.bot_id) return;
     if (!msg.thread_ts) return;
-    if (!activeThreads.has(msg.thread_ts)) return;
+    const threadAgents = activeThreads.get(msg.thread_ts);
+    if (!threadAgents || !threadAgents.has(agentId)) return;
     if ((msg.text ?? '').includes(`<@`)) return;
 
     const content = (msg.text ?? '').trim();
