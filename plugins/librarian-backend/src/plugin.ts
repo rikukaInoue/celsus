@@ -81,10 +81,6 @@ async function indexCatalog(options: {
 }) {
   const { knex, catalog, auth, logger } = options;
 
-  const { token } = await auth.getPluginRequestToken({
-    onBehalfOf: await auth.getOwnServiceCredentials(),
-    targetPluginId: 'catalog',
-  });
   const { items: entities } = await catalog.getEntities(undefined, { credentials: await auth.getOwnServiceCredentials() });
   let indexed = 0;
 

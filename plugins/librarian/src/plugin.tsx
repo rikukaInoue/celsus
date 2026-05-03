@@ -62,6 +62,6 @@ const librarianAnalytics = AnalyticsImplementationBlueprint.make({
 });
 
 export const librarianPlugin = createFrontendPlugin({
-  id: 'librarian',
+  pluginId: 'librarian',
   extensions: [librarianApi, librarianPage, librarianAnalytics],
 });
