@@ -34,7 +34,8 @@ function buildThinkingStyle(agent: AgentConfig, inputType: InputType): string {
 - 「もしそれが正しいなら、こうなるはず」と仮説を推し進める
 - あるいは「でも逆にこう考えたら？」と前提をひっくり返す
 - 大胆でいい。間違っててもいい。議論を面白くするのが仕事
-- 短く鋭く。1つの仮説に絞る`;
+- 短く鋭く。1つの仮説に絞る
+- 全体で3文以内。チャットの1発言くらいの長さで`;
     }
 
     if (agent.id === 'aria') {
@@ -46,7 +47,8 @@ function buildThinkingStyle(agent: AgentConfig, inputType: InputType): string {
 - 「それが正しい場面」と「それが崩れる場面」を両方提示する
 - 隠れた前提を見つけて言語化する（「これって〇〇を前提にしてますよね？」）
 - 反例や境界条件を静かに提示する
-- 判断は下さない。材料を並べて相手に委ねる`;
+- 判断は下さない。材料を並べて相手に委ねる
+- 全体で3文以内。チャットの1発言くらいの長さで`;
     }
   }
 
@@ -59,7 +61,8 @@ function buildThinkingStyle(agent: AgentConfig, inputType: InputType): string {
 - 「今すぐできる具体的な1アクション」を提案する
 - 選択肢を並べない。「これやりましょう」と1つに絞る
 - 相手の背中を押す。「大丈夫」「できる」「もうほぼ終わってる」
-- 短く答える。3-5文が理想
+- 短く答える。2-3文が理想。チャットの1発言くらいの長さ
+- リストや箇条書きは使わない。会話っぽく
 - 完璧じゃなくていい。動くことが正義`;
   }
 
@@ -73,7 +76,9 @@ function buildThinkingStyle(agent: AgentConfig, inputType: InputType): string {
 - 相手の言葉をリフレーミングする（「つまりこういうことですか？」）
 - 「見落としてるかもしれない観点」を提示する
 - 問いを投げて、相手が自分で気づけるように導く
-- 急かさない。じっくり考える余白を作る`;
+- 急かさない。じっくり考える余白を作る
+- 全体で2-3文が理想。チャットの1発言くらいの長さ
+- リストや箇条書きは使わない。会話っぽく`;
   }
 
   return `あなたの着眼点: ${agent.judgmentAxes.join(', ')}`;
@@ -155,6 +160,33 @@ ${toneBlock}
 ${extractedContent}`;
 }
 
+function pickVariation(agent: AgentConfig): string {
+  const mitraVariations = [
+    '',
+    '1文だけで返してください。',
+    '「うーん」から始めてください。',
+    '自信なさげに。「合ってるかわかんないですけど…」',
+    '「あ、やっぱ違うかも」と途中で考え直してください。',
+    '質問だけで返してください。アドバイスなし。',
+    '失敗談を1つ混ぜてください（架空でOK）。',
+    '相手の言葉をオウム返ししてから答えてください。',
+  ];
+
+  const ariaVariations = [
+    '',
+    '1文だけで返してください。',
+    '「……」から始めてください。',
+    'たとえ話を1つだけ使ってください。',
+    '問いを1つだけ返してください。それだけ。',
+    '珍しく断定的に言い切ってください。',
+    '「前に似た話を聞いたことがあるんですが」から始めてください。',
+    '「それ、わかります」から始めてください。',
+  ];
+
+  const variations = agent.id === 'mitra' ? mitraVariations : ariaVariations;
+  return variations[Math.floor(Math.random() * variations.length)];
+}
+
 export async function draft(
   agent: AgentConfig,
   context: AgentContext,
@@ -162,10 +194,14 @@ export async function draft(
 ): Promise<{ agentId: string; content: string }> {
   const inputType = detectInputType(input, context);
   const system = buildSystemPrompt(agent, context, inputType);
-  const prompt = inputType === 'code'
-    ? `以下をレビューしてください:\n\n${input.content}`
-    : input.content;
+  const variation = pickVariation(agent);
+  const variationBlock = variation ? `\n\n## 今回の応答スタイル指示\n${variation}` : '';
 
-  const content = await generate({ system, prompt, maxTokens: 1024 });
+  const prompt = inputType === 'code'
+    ? `以下をレビューしてください:\n\n${input.content}${variationBlock}`
+    : `${input.content}${variationBlock}`;
+
+  const maxTokens = Math.min(Math.max(Math.ceil(input.content.length * 0.8), 100), 1024);
+  const content = await generate({ system, prompt, maxTokens });
   return { agentId: agent.id, content };
 }
