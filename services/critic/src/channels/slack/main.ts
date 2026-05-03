@@ -26,25 +26,33 @@ const deps: PipelineDeps = {
   embed,
 };
 
-const bots: { agentId: string; botToken?: string; appToken?: string }[] = [
+const botConfigs = [
   {
     agentId: 'mitra',
     botToken: process.env.MITRA_SLACK_BOT_TOKEN,
     appToken: process.env.MITRA_SLACK_APP_TOKEN,
+    botUserId: process.env.MITRA_SLACK_BOT_USER_ID,
   },
   {
     agentId: 'aria',
     botToken: process.env.ARIA_SLACK_BOT_TOKEN,
     appToken: process.env.ARIA_SLACK_APP_TOKEN,
+    botUserId: process.env.ARIA_SLACK_BOT_USER_ID,
   },
 ];
 
+const peerMap = new Map<string, { agentId: string; slackUserId: string }>();
+
 (async () => {
-  for (const bot of bots) {
+  for (const bot of botConfigs) {
     if (!bot.botToken || !bot.appToken) {
       console.log(`⏭ Skipping ${bot.agentId} (no tokens configured)`);
       continue;
     }
+
+    const peers = botConfigs
+      .filter(b => b.agentId !== bot.agentId && b.botUserId)
+      .map(b => ({ agentId: b.agentId, slackUserId: b.botUserId! }));
 
     const app = new App({
       token: bot.botToken,
@@ -52,7 +60,7 @@ const bots: { agentId: string; botToken?: string; appToken?: string }[] = [
       socketMode: true,
     });
 
-    setupAgentBot(app, bot.agentId, deps);
+    setupAgentBot(app, bot.agentId, deps, peers);
     try {
       await app.start();
       console.log(`⚡ ${bot.agentId} bot is running (socket mode)`);

@@ -33,7 +33,14 @@ async function fetchThreadMessages(app: App, channel: string, threadTs: string):
   }
 }
 
-export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
+export interface PeerBot {
+  agentId: string;
+  slackUserId: string;
+}
+
+const calledPeerInThread = new Set<string>();
+
+export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, peers: PeerBot[] = []) {
   const agent = getAgent(agentId);
   if (!agent) throw new Error(`Agent not found: ${agentId}`);
 
@@ -87,8 +94,43 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
       if (msg.ts) {
         utteranceMap.set(msg.ts, { agentId: response.agentId, utteranceId: response.utteranceId });
       }
+
+      await maybeSummonPeer(app, response.content, threadTs, event.channel);
     }
   });
+
+  async function maybeSummonPeer(app: App, responseContent: string, threadTs: string, channel: string) {
+    if (peers.length === 0) return;
+    if (calledPeerInThread.has(threadTs)) return;
+
+    const shouldSummon = /Aria|アリア|Mitra|ミトラ|別の視点|他の意見|聞いてみ/.test(responseContent);
+    if (!shouldSummon) return;
+
+    const peer = peers[0];
+    calledPeerInThread.add(threadTs);
+
+    const summonMessages = agentId === 'mitra'
+      ? [
+          `<@${peer.slackUserId}> ちょっと聞いてもいいですか？`,
+          `<@${peer.slackUserId}> これどう思います？`,
+          `<@${peer.slackUserId}> 先輩の意見も聞きたいです！`,
+        ]
+      : [
+          `<@${peer.slackUserId}> ……どう思う？`,
+          `<@${peer.slackUserId}>`,
+        ];
+
+    const msg = summonMessages[Math.floor(Math.random() * summonMessages.length)];
+
+    try {
+      await app.client.chat.postMessage({
+        channel,
+        text: msg,
+        thread_ts: threadTs,
+      });
+    } catch {
+    }
+  }
 
   const reactionReplies: Record<string, string[]> = agentId === 'mitra'
     ? {
