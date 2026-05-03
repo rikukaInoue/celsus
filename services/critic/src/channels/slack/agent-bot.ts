@@ -4,9 +4,16 @@ import { runPipeline, type PipelineDeps } from '../../agents/pipeline.js';
 import { getAgents, getAgent } from '../../agents/registry.js';
 import { recordFeedback } from '../../feedback/collector.js';
 import { reactionToSignal } from '../../feedback/signals.js';
+import { queryClient } from '../../db/client.js';
 import type { ReviewInput, Message } from '../../core/types.js';
 
-const utteranceMap = new Map<string, { agentId: string; utteranceId: string }>();
+async function lookupUtteranceBySlackTs(slackTs: string): Promise<{ agentId: string; utteranceId: string } | null> {
+  const rows = await queryClient`
+    SELECT id, agent_id FROM agent_utterances WHERE slack_ts = ${slackTs} LIMIT 1
+  `;
+  if (rows.length === 0) return null;
+  return { agentId: rows[0].agent_id as string, utteranceId: rows[0].id as string };
+}
 const activeThreads = new Map<string, Set<string>>();
 
 async function fetchThreadMessages(app: App, channel: string, threadTs: string): Promise<Message[]> {
@@ -93,7 +100,7 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
       });
 
       if (msg.ts) {
-        utteranceMap.set(msg.ts, { agentId: response.agentId, utteranceId: response.utteranceId });
+        await queryClient`UPDATE agent_utterances SET slack_ts = ${msg.ts}, slack_channel = ${event.channel} WHERE id = ${response.utteranceId}`;
       }
 
       await maybeSummonPeer(app, response.content, threadTs, event.channel);
@@ -150,17 +157,15 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
     const result = classifyReply(userReply);
     if (result.signal === 0) return;
 
-    const recentUtterances = [...utteranceMap.entries()]
-      .filter(([ts]) => ts > threadTs)
-      .sort(([a], [b]) => b.localeCompare(a));
-
-    const lastBotUtterance = recentUtterances[0];
-    if (!lastBotUtterance) return;
-
-    const [, utterance] = lastBotUtterance;
+    const rows = await queryClient`
+      SELECT id, agent_id FROM agent_utterances
+      WHERE agent_id = ${agentId} AND slack_ts IS NOT NULL
+      ORDER BY created_at DESC LIMIT 1
+    `;
+    if (rows.length === 0) return;
 
     await recordFeedback({
-      utteranceId: utterance.utteranceId,
+      utteranceId: rows[0].id as string,
       source: 'human_implicit',
       axis: result.axis,
       signal: result.signal,
@@ -219,7 +224,7 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
     const signal = reactionToSignal(event.reaction);
     if (!signal) return;
 
-    const utterance = utteranceMap.get(event.item.ts);
+    const utterance = await lookupUtteranceBySlackTs(event.item.ts);
     if (!utterance) return;
 
     await recordFeedback({
@@ -281,7 +286,7 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
       });
 
       if (posted.ts) {
-        utteranceMap.set(posted.ts, { agentId: response.agentId, utteranceId: response.utteranceId });
+        await queryClient`UPDATE agent_utterances SET slack_ts = ${posted.ts}, slack_channel = ${msg.channel} WHERE id = ${response.utteranceId}`;
       }
     }
   });
