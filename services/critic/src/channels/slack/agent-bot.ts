@@ -39,7 +39,23 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps) {
   app.event('app_mention', async ({ event, say }) => {
     const content = event.text.replace(/<@[A-Z0-9]+>/g, '').trim();
     if (!content) {
-      await say({ text: '何か聞いてください！', thread_ts: event.ts });
+      const emptyReplies = agentId === 'mitra'
+        ? [
+            'あっ 何かありました？ 聞きますよ！',
+            '先輩！ 何でも聞いてください',
+            'はいっ なんでしょう？',
+            '呼びました？ 何か手伝えることあります？',
+            'お疲れ様です！ 何かあったら言ってくださいね',
+          ]
+        : [
+            '……うん',
+            '……何？',
+            '聞いてる',
+            '……',
+            '呼んだ？',
+          ];
+      const reply = emptyReplies[Math.floor(Math.random() * emptyReplies.length)];
+      await say({ text: reply, thread_ts: event.ts });
       return;
     }
 
