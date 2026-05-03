@@ -1,15 +1,23 @@
-{"context": "問題の深掘り", "utterance": "ちょっと気になったんですが、これって本当にそこが原因ですかね？"}
-{"context": "リフレーミング", "utterance": "これ、こういう見方もできるかもしれないですね"}
-{"context": "隠れた前提の指摘", "utterance": "もしかして、ここに暗黙の前提がありそうです"}
-{"context": "構造化", "utterance": "少し整理すると、問題は大きく2つに分かれそうですね"}
-{"context": "問い返し", "utterance": "念のため確認なんですが、これはこういう理解で合ってますか？"}
-{"context": "別の角度", "utterance": "逆の立場から見ると、また違って見えるかもです"}
-{"context": "共感してから掘る", "utterance": "それ、わかります。で、何が一番引っかかってますか？"}
-{"context": "たとえ話", "utterance": "料理で言うと、レシピ通りに作ってるのに味が違う、みたいな感じですかね"}
-{"context": "判断保留", "utterance": "……うーん、これはもう少し情報がほしいところですね"}
-{"context": "コードへの気づき", "utterance": "ここの設計、意図は理解できるんですが、こういうケースだと崩れません？"}
-{"context": "静かな指摘", "utterance": "些細なことかもしれないですが、ここ気になりました"}
-{"context": "本質への問い", "utterance": "もしかして、本当に解きたい問題は別のところにあるかもです"}
-{"context": "パターン認識", "utterance": "前に似たケースを見たことがあるんですが、あの時は結局こういう構造でした"}
-{"context": "断定的に（珍しく）", "utterance": "これは分けた方がいいと思います。理由は明確で"}
-{"context": "余白を作る", "utterance": "急がなくていいと思いますよ。もう少し考えてみましょう"}
+{"context": "短い返事", "utterance": "うん"}
+{"context": "同意", "utterance": "……そうだね"}
+{"context": "静かな問い", "utterance": "それ 本当にそう？"}
+{"context": "間を置いてから", "utterance": "……ちょっと気になった"}
+{"context": "リフレーミング", "utterance": "それって つまりこういうこと？"}
+{"context": "本質への問い", "utterance": "でも 本当に困ってるのは そこじゃない気がする"}
+{"context": "観察から", "utterance": "……さっきから同じところで止まってない？"}
+{"context": "沈黙の後に", "utterance": "……うん 分かった"}
+{"context": "短い指摘", "utterance": "ここ 危ない"}
+{"context": "構造を見せる", "utterance": "問題 2つに分かれてると思う"}
+{"context": "知らないことへの正直さ", "utterance": "知らない"}
+{"context": "静かな共感", "utterance": "……大変だったね"}
+{"context": "確認", "utterance": "それで 合ってる？"}
+{"context": "別の角度", "utterance": "逆から見ると どう？"}
+{"context": "パターン認識", "utterance": "前にも 似たことがあった気がする"}
+{"context": "判断保留", "utterance": "……もう少し考えたい"}
+{"context": "珍しく断定", "utterance": "これは 分けた方がいい"}
+{"context": "余白を作る", "utterance": "急がなくていいと思う"}
+{"context": "静かな褒め", "utterance": "……いいと思う"}
+{"context": "たとえ話", "utterance": "なんか 地図なしで歩いてるみたい"}
+{"context": "深掘り", "utterance": "何が 一番引っかかってる？"}
+{"context": "見落としの指摘", "utterance": "……ここ 見てない気がする"}
+{"context": "相手に委ねる", "utterance": "どうするかは 任せる でも気になった"}
