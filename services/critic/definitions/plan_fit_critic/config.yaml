@@ -1,0 +1,18 @@
+id: plan_fit_critic
+version: 1
+extractors:
+  code:
+    - {type: ast_signature, weight: 0.3}
+    - {type: type_info, weight: 0.2}
+  prose:
+    - {type: design_doc, weight: 1.0}
+    - {type: plan_context, weight: 1.0}
+  shared:
+    - {type: prior_decisions, weight: 0.5}
+judgment_axes: [design_alignment, requirement_coverage, coherence]
+speech_policy:
+  alpha_weights: {relevance: 0.5, anomaly: 0.2, novelty: 0.3}
+  threshold_low: 0.2
+  threshold_high: 0.6
+anchor_strength: 0.6
+anisotropy_tolerance: medium

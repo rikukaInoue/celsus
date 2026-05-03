@@ -1,0 +1,18 @@
+id: signature_critic
+version: 1
+extractors:
+  code:
+    - {type: ast_signature, weight: 1.0}
+    - {type: type_info, weight: 1.0}
+  prose:
+    - {type: interface_boundary, weight: 1.0}
+    - {type: prior_decisions, weight: 0.5}
+  shared:
+    - {type: design_doc, weight: 0.3}
+judgment_axes: [api_consistency, type_safety, naming]
+speech_policy:
+  alpha_weights: {relevance: 0.6, anomaly: 0.3, novelty: 0.1}
+  threshold_low: 0.2
+  threshold_high: 0.6
+anchor_strength: 0.8
+anisotropy_tolerance: low
