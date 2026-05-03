@@ -13,6 +13,27 @@ import { draft } from './draft.js';
 import { score } from './scorer.js';
 import { refine } from './refiner.js';
 
+type SpeakingMode = 'auto' | 'both' | 'named';
+
+function detectSpeakingMode(input: ReviewInput): SpeakingMode {
+  const content = input.content;
+
+  // Explicit "both" trigger
+  if (/両方|二人|2人|みんな/.test(content)) return 'both';
+
+  // Explicit name mention
+  if (/mitra|ミトラ|aria|アリア/i.test(content)) return 'named';
+
+  return 'auto';
+}
+
+function isNamed(agent: AgentConfig, input: ReviewInput): boolean {
+  const content = input.content.toLowerCase();
+  const id = agent.id.toLowerCase();
+  const displayName = (agent.displayName ?? '').toLowerCase();
+  return content.includes(id) || content.includes(displayName);
+}
+
 export interface PipelineResult {
   turnId: string;
   responses: AgentResponse[];
@@ -32,10 +53,15 @@ export interface PipelineDeps {
   embed: (text: string) => Promise<number[]>;
 }
 
+export interface PipelineOptions {
+  speakingMode?: SpeakingMode;
+}
+
 export async function runPipeline(
   input: ReviewInput,
   agents: AgentConfig[],
   deps: PipelineDeps,
+  options?: PipelineOptions,
 ): Promise<PipelineResult> {
   const turnId = randomUUID();
 
@@ -70,16 +96,21 @@ export async function runPipeline(
     }),
   );
 
+  // Determine speaking mode: explicit override > detection from input
+  const speakingMode = options?.speakingMode ?? detectSpeakingMode(input);
+
   // Guaranteed speaker: highest alpha agent always speaks
   const maxAlpha = Math.max(...scored.map(s => s.alpha));
 
-  // REFINING: refine high-alpha drafts, suppress low-alpha (but guarantee at least one)
+  // REFINING: refine high-alpha drafts, suppress low-alpha
   const responses: AgentResponse[] = await Promise.all(
     scored.map(async (s) => {
       const agent = agents.find(a => a.id === s.agentId)!;
       const utteranceId = randomUUID();
 
-      const isGuaranteed = s.alpha === maxAlpha;
+      const isGuaranteed = speakingMode === 'both'
+        || (speakingMode === 'named' && isNamed(agent, input))
+        || s.alpha === maxAlpha;
       let content: string;
       let suppressed = false;
 

@@ -28,7 +28,7 @@ export function setupEvents(app: App, deps: PipelineDeps) {
       language: message.modality === 'code' ? 'typescript' : undefined,
     };
 
-    const result = await runPipeline(input, agents, deps);
+    const result = await runPipeline(input, agents, deps, { speakingMode: 'both' });
     const active = result.responses.filter(r => !r.suppressed);
 
     for (const response of active) {
