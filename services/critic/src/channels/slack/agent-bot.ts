@@ -7,10 +7,10 @@ import { reactionToSignal } from '../../feedback/signals.js';
 import { queryClient } from '../../db/client.js';
 import type { ReviewInput, Message } from '../../core/types.js';
 
-async function lookupUtteranceBySlackTs(slackTs: string): Promise<{ agentId: string; utteranceId: string } | null> {
-  const rows = await queryClient`
-    SELECT id, agent_id FROM agent_utterances WHERE slack_ts = ${slackTs} LIMIT 1
-  `;
+async function lookupUtteranceBySlackTs(slackTs: string, forAgentId?: string): Promise<{ agentId: string; utteranceId: string } | null> {
+  const rows = forAgentId
+    ? await queryClient`SELECT id, agent_id FROM agent_utterances WHERE slack_ts = ${slackTs} AND agent_id = ${forAgentId} LIMIT 1`
+    : await queryClient`SELECT id, agent_id FROM agent_utterances WHERE slack_ts = ${slackTs} LIMIT 1`;
   if (rows.length === 0) return null;
   return { agentId: rows[0].agent_id as string, utteranceId: rows[0].id as string };
 }
@@ -221,11 +221,13 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
       };
 
   app.event('reaction_added', async ({ event }) => {
+    console.log(`[${agentId}] reaction_added: ${event.reaction} on ts=${event.item.ts}`);
     const signal = reactionToSignal(event.reaction);
     if (!signal) return;
 
-    const utterance = await lookupUtteranceBySlackTs(event.item.ts);
+    const utterance = await lookupUtteranceBySlackTs(event.item.ts, agentId);
     if (!utterance) return;
+    console.log(`[${agentId}] reaction ${event.reaction} on ${event.item.ts} → feedback recorded`);
 
     await recordFeedback({
       utteranceId: utterance.utteranceId,
