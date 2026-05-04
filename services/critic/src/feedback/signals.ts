@@ -16,5 +16,5 @@ const REACTION_SIGNALS: Record<string, { signal: number; axis: string }> = {
 };
 
 export function reactionToSignal(reaction: string): { signal: number; axis: string } | null {
-  return REACTION_SIGNALS[reaction as ReactionType] ?? null;
+  return REACTION_SIGNALS[reaction] ?? null;
 }

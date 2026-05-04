@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/server-github": "^2025.4.8",
     "@slack/bolt": "^4.1.0",
     "chalk": "^5.4.0",
     "dotenv": "^16.4.0",

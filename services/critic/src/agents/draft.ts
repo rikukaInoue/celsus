@@ -1,5 +1,6 @@
 import type { AgentConfig, AgentContext, ReviewInput } from '../core/types.js';
 import { generate } from '../shared/llm.js';
+import { getAllTools, createToolHandler } from '../shared/mcp-client.js';
 
 type InputType = 'code' | 'consultation' | 'debate' | 'mixed';
 
@@ -188,6 +189,8 @@ export async function draft(
     : `${input.content}${variationBlock}`;
 
   const maxTokens = Math.min(Math.max(Math.ceil(input.content.length * 1.5), 256), 1024);
-  const content = await generate({ system, prompt, maxTokens });
+  const tools = getAllTools();
+  const onToolCall = tools.length > 0 ? createToolHandler() : undefined;
+  const content = await generate({ system, prompt, maxTokens, tools, onToolCall });
   return { agentId: agent.id, content };
 }

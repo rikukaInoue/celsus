@@ -3,6 +3,7 @@ import { App } from '@slack/bolt';
 import { queryClient } from '../../db/client.js';
 import { embed } from '../../embeddings/embed.js';
 import { setupAgentBot } from './agent-bot.js';
+import { connectGitHubServer } from '../../shared/mcp-client.js';
 import type { PipelineDeps } from '../../agents/pipeline.js';
 import type { Utterance } from '../../core/types.js';
 
@@ -44,6 +45,7 @@ const botConfigs = [
 const peerMap = new Map<string, { agentId: string; slackUserId: string }>();
 
 (async () => {
+  await connectGitHubServer();
   for (const bot of botConfigs) {
     if (!bot.botToken || !bot.appToken) {
       console.log(`⏭ Skipping ${bot.agentId} (no tokens configured)`);
