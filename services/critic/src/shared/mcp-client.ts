@@ -10,10 +10,20 @@ interface McpServer {
 
 const servers: McpServer[] = [];
 
+async function resolveGitHubToken(): Promise<string | null> {
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  try {
+    const { execSync } = await import('node:child_process');
+    const token = execSync('gh auth token', { encoding: 'utf-8' }).trim();
+    if (token) return token;
+  } catch {}
+  return null;
+}
+
 export async function connectGitHubServer(): Promise<void> {
-  const token = process.env.GITHUB_TOKEN;
+  const token = await resolveGitHubToken();
   if (!token) {
-    console.log('⏭ Skipping GitHub MCP server (no GITHUB_TOKEN)');
+    console.log('⏭ Skipping GitHub MCP server (no GITHUB_TOKEN or gh CLI)');
     return;
   }
 
