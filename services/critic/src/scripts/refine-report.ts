@@ -98,6 +98,43 @@ async function generateReport(): Promise<string> {
     }
   }
 
+  // Speech act classification data
+  const actCounts = await queryClient`
+    SELECT classified_as, count(*) as cnt
+    FROM speech_act_logs
+    GROUP BY classified_as
+    ORDER BY cnt DESC
+  `;
+  const actTotal = actCounts.reduce((s, r) => s + Number(r.cnt), 0);
+
+  lines.push('📚 *BERT蒸留データ*');
+  lines.push(`分類ログ合計: ${actTotal}件${actTotal >= 500 ? ' ✅ fine-tune可能' : actTotal >= 100 ? ' 🔶 あと少し' : ' ⏳ 収集中'}`);
+  if (actCounts.length > 0) {
+    for (const row of actCounts) {
+      const bar = '█'.repeat(Math.ceil(Number(row.cnt) / Math.max(actTotal, 1) * 20));
+      lines.push(`  ${row.classified_as}: ${row.cnt} ${bar}`);
+    }
+  }
+  lines.push('');
+
+  // Feedback data
+  const feedbackTotal = await queryClient`SELECT count(*) as cnt FROM feedback`;
+  const feedbackByAxis = await queryClient`
+    SELECT axis, count(*) as cnt, round(avg(signal)::numeric, 2) as avg_signal
+    FROM feedback
+    GROUP BY axis
+    ORDER BY cnt DESC
+  `;
+
+  lines.push('💬 *フィードバックデータ*');
+  lines.push(`合計: ${feedbackTotal[0].cnt}件`);
+  if (feedbackByAxis.length > 0) {
+    for (const row of feedbackByAxis) {
+      lines.push(`  ${row.axis}: ${row.cnt}件 (avg=${row.avg_signal})`);
+    }
+  }
+  lines.push('');
+
   lines.push('_高評価の発話をvoice_samples.jsonlに追加しますか？ 👍 で承認_');
   return lines.join('\n');
 }
