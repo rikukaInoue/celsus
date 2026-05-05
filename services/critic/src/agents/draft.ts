@@ -1,6 +1,7 @@
 import type { AgentConfig, AgentContext, ReviewInput } from '../core/types.js';
 import { generate } from '../shared/llm.js';
 import { getAllTools, createToolHandler } from '../shared/mcp-client.js';
+import { classifySpeechAct, type SpeechAct } from './classifier.js';
 
 type InputType = 'code' | 'consultation' | 'debate' | 'mixed';
 
@@ -174,15 +175,48 @@ function pickVariation(agent: AgentConfig): string {
   return variations[Math.floor(Math.random() * variations.length)];
 }
 
+function speechActHint(act: SpeechAct, agentId: string): string {
+  const hints: Record<string, Record<SpeechAct, string>> = {
+    mitra: {
+      self_disclosure: '相手が自分のことを話しています。共感してから1つだけ提案してください。',
+      question_yesno: 'はい/いいえで答えられる質問です。端的に答えてください。',
+      question_what: '説明を求めています。知ってることを直接伝えてください。',
+      response: '相手が返事をしています。会話を前に進めてください。',
+      backchannel: 'あいづちです。反応しなくていいです。',
+      confirmation: '確認を求めています。合ってるかどうかだけ答えてください。',
+      request: '何かを頼まれています。すぐ動いてください。',
+      assertion: '意見を主張しています。乗っかるか反論するか。',
+      code_review: 'コードです。具体的に指摘してください。',
+    },
+    aria: {
+      self_disclosure: '相手が自分のことを話しています。短く共感するか、1つ問いを返してください。',
+      question_yesno: '短く答えるか、前提を問い返してください。',
+      question_what: '構造を見せるか、問いで返してください。',
+      response: '……短く返すだけでいいです。',
+      backchannel: '反応しなくていいです。',
+      confirmation: '合ってるかだけ。',
+      request: '気づいたことだけ短く。',
+      assertion: '隠れた前提を1つ指摘してください。',
+      code_review: '気になる点だけ短く。',
+    },
+  };
+  return hints[agentId]?.[act] ?? '';
+}
+
 export async function draft(
   agent: AgentConfig,
   context: AgentContext,
   input: ReviewInput,
 ): Promise<{ agentId: string; content: string }> {
   const inputType = detectInputType(input, context);
+  const speechAct = await classifySpeechAct(input.content);
   const system = buildSystemPrompt(agent, context, inputType);
   const variation = pickVariation(agent);
-  const variationBlock = variation ? `\n\n## 今回の応答スタイル指示\n${variation}` : '';
+  const actHint = speechActHint(speechAct, agent.id);
+  const variationBlock = [
+    variation ? `\n\n## 今回の応答スタイル指示\n${variation}` : '',
+    actHint ? `\n\n## 発話タイプ: ${speechAct}\n${actHint}` : '',
+  ].join('');
 
   const prompt = inputType === 'code'
     ? `以下をレビューしてください:\n\n${input.content}${variationBlock}`
