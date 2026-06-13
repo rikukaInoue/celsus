@@ -1,7 +1,7 @@
 import type { App } from '@slack/bolt';
 import { normalizeSlackInput } from '../normalizer.js';
 import { runPipeline, type PipelineDeps } from '../../agents/pipeline.js';
-import { getAgents, getAgent } from '../../agents/registry.js';
+import { getAgents, getAgent } from '../../domains/librarian/registry.js';
 import { recordFeedback } from '../../feedback/collector.js';
 import { reactionToSignal } from '../../feedback/signals.js';
 import { queryClient } from '../../db/client.js';

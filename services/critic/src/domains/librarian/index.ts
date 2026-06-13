@@ -10,15 +10,10 @@ import type { Domain } from '../../core/domain.js';
 import type { AgentConfig, DomainInput, Extractor } from '../../core/types.js';
 import { registerDomain } from '../../core/domain-registry.js';
 import { classifySpeechAct } from '../../agents/classifier.js';
-import { createExtractorsForAgent } from '../../extractors/interface.js';
-import { getAgents } from '../../agents/registry.js';
-
-// Register the librarian extractors as a side effect (also pulled in via the
-// agent registry, but kept explicit so the domain owns its registrations).
-import '../../extractors/ast-signature.js';
-import '../../extractors/type-info.js';
-import '../../extractors/design-doc.js';
-import '../../extractors/plan-context.js';
+import { createExtractorsForAgent } from './extractors/interface.js';
+// The agent registry imports the librarian extractors for their registration
+// side effect, so importing it here is enough to populate the extractor registry.
+import { getAgents } from './registry.js';
 
 function narrowModality(modality: string): 'code' | 'prose' | 'mixed' {
   return modality === 'code' || modality === 'prose' ? modality : 'mixed';
@@ -43,4 +38,4 @@ export const librarianDomain: Domain = {
 registerDomain(librarianDomain);
 
 export { classifySpeechAct, type SpeechAct } from '../../agents/classifier.js';
-export { getAgents, getAgent } from '../../agents/registry.js';
+export { getAgents, getAgent } from './registry.js';

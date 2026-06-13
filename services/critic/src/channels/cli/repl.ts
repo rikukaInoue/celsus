@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import chalk from 'chalk';
 import { normalizeCliInput } from '../normalizer.js';
 import { runPipeline, type PipelineDeps } from '../../agents/pipeline.js';
-import { getAgents } from '../../agents/registry.js';
+import { getAgents } from '../../domains/librarian/registry.js';
 import { recordPreference } from '../../feedback/collector.js';
 import { formatResponse, formatPreferencePrompt } from './formatter.js';
 import type { ReviewInput } from '../../core/types.js';

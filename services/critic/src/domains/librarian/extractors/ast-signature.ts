@@ -1,6 +1,6 @@
 import ts from 'typescript';
 import { registerExtractor } from './interface.js';
-import type { Extractor, ReviewInput, ExtractedContext } from '../core/types.js';
+import type { Extractor, ReviewInput, ExtractedContext } from '../../../core/types.js';
 
 function extractSignatures(sourceCode: string, fileName = 'input.ts'): string[] {
   const sourceFile = ts.createSourceFile(fileName, sourceCode, ts.ScriptTarget.Latest, true);

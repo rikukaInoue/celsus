@@ -1,5 +1,5 @@
 import { registerExtractor } from './interface.js';
-import type { ReviewInput, ExtractedContext } from '../core/types.js';
+import type { ReviewInput, ExtractedContext } from '../../../core/types.js';
 
 registerExtractor('plan_context', (weight) => ({
   id: 'plan_context',
