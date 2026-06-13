@@ -1,16 +1,46 @@
 // Librarian domain — the original "critic" (司書) behaviour.
 //
-// Step 1 (re-export shell): this file is a thin gateway that points at the
-// existing librarian-specific modules without moving them yet. Nothing imports
-// it in this step; it just establishes the `domains/librarian` namespace so the
-// later contract wiring and physical file moves stay non-breaking.
+// Implements the Domain contract over the existing librarian modules
+// (classifier, extractor registry, agent registry) and registers itself as a
+// side effect of import. Files are not physically moved yet; that happens in a
+// later step. Importing this module is what makes the librarian available to the
+// pipeline, so entry points import it for its registration side effect.
 
-// Register the librarian extractors as a side effect of importing this domain.
+import type { Domain } from '../../core/domain.js';
+import type { AgentConfig, DomainInput, Extractor } from '../../core/types.js';
+import { registerDomain } from '../../core/domain-registry.js';
+import { classifySpeechAct } from '../../agents/classifier.js';
+import { createExtractorsForAgent } from '../../extractors/interface.js';
+import { getAgents } from '../../agents/registry.js';
+
+// Register the librarian extractors as a side effect (also pulled in via the
+// agent registry, but kept explicit so the domain owns its registrations).
 import '../../extractors/ast-signature.js';
 import '../../extractors/type-info.js';
 import '../../extractors/design-doc.js';
 import '../../extractors/plan-context.js';
 
+function narrowModality(modality: string): 'code' | 'prose' | 'mixed' {
+  return modality === 'code' || modality === 'prose' ? modality : 'mixed';
+}
+
+export const librarianDomain: Domain = {
+  id: 'librarian',
+
+  async classify(input: DomainInput): Promise<string> {
+    return classifySpeechAct(input.content);
+  },
+
+  extractorsFor(agent: AgentConfig, modality: string): Extractor[] {
+    return createExtractorsForAgent(agent.extractors, narrowModality(modality));
+  },
+
+  loadAgents(): AgentConfig[] {
+    return getAgents();
+  },
+};
+
+registerDomain(librarianDomain);
+
 export { classifySpeechAct, type SpeechAct } from '../../agents/classifier.js';
-export { createExtractorsForAgent } from '../../extractors/interface.js';
 export { getAgents, getAgent } from '../../agents/registry.js';

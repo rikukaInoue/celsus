@@ -3,6 +3,8 @@ import { App } from '@slack/bolt';
 import { queryClient } from '../../db/client.js';
 import { embed } from '../../embeddings/embed.js';
 import { setupAgentBot } from './agent-bot.js';
+// Register the librarian domain so the pipeline can resolve it by id.
+import '../../domains/librarian/index.js';
 import { connectGitHubServer } from '../../shared/mcp-client.js';
 import type { PipelineDeps } from '../../agents/pipeline.js';
 import type { Utterance } from '../../core/types.js';

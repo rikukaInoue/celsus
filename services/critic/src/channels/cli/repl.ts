@@ -96,7 +96,9 @@ async function handleReview(
 
   const input: ReviewInput = {
     id: message.id,
+    domainId: 'librarian',
     content: message.content,
+    source: 'cli',
     language: message.modality === 'code' ? 'typescript' : undefined,
     filePath,
   };
