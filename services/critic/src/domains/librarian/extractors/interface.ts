@@ -1,4 +1,4 @@
-import type { Extractor, ReviewInput, ExtractedContext } from '../core/types.js';
+import type { Extractor, ReviewInput, ExtractedContext } from '../../../core/types.js';
 
 export type ExtractorFactory = (weight: number) => Extractor;
 

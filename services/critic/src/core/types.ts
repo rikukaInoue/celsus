@@ -1,10 +1,20 @@
-export interface ReviewInput {
+// Domain-agnostic pipeline input. Every domain (librarian, o11y, ...) feeds the
+// pipeline through this shape; domain-specific fields live on extensions of it.
+export interface DomainInput {
   id: string;
+  domainId: string;
   content: string;
+  source: 'cli' | 'slack' | 'api' | 'webhook';
+  payload?: Record<string, unknown>;
+  priorMessages?: Message[];
+}
+
+// Librarian-specific input. Generalised over DomainInput so the base pipeline
+// stays domain-agnostic while the librarian extractors keep their code fields.
+export interface ReviewInput extends DomainInput {
   language?: string;
   filePath?: string;
   designContext?: string;
-  priorMessages?: Message[];
 }
 
 export interface Message {

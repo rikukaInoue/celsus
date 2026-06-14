@@ -1,6 +1,6 @@
 import { registerExtractor } from './interface.js';
-import type { ReviewInput, ExtractedContext } from '../core/types.js';
-import { db } from '../db/client.js';
+import type { ReviewInput, ExtractedContext } from '../../../core/types.js';
+import { db } from '../../../db/client.js';
 import { sql } from 'drizzle-orm';
 
 registerExtractor('design_doc', (weight) => ({

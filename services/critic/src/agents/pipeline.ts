@@ -8,7 +8,7 @@ import type {
   PipelineState,
   Utterance,
 } from '../core/types.js';
-import { createExtractorsForAgent } from '../extractors/interface.js';
+import { getDomain } from '../core/domain-registry.js';
 import { draft } from './draft.js';
 import { score } from './scorer.js';
 import { refine } from './refiner.js';
@@ -65,10 +65,13 @@ export async function runPipeline(
 ): Promise<PipelineResult> {
   const turnId = randomUUID();
 
+  const domain = getDomain(input.domainId);
+  if (!domain) throw new Error(`Unknown domain: ${input.domainId}`);
+
   // EXTRACTING: run all extractors for each agent in parallel
   const agentContexts: AgentContext[] = await Promise.all(
     agents.map(async (agent) => {
-      const extractors = createExtractorsForAgent(agent.extractors, input.language ? 'code' : 'mixed');
+      const extractors = domain.extractorsFor(agent, input.language ? 'code' : 'mixed');
       const results = await Promise.all(extractors.map(e => e.extract(input)));
       const extractions = results.filter((r): r is NonNullable<typeof r> => r !== null);
 

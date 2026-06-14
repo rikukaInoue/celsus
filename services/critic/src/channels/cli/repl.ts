@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import chalk from 'chalk';
 import { normalizeCliInput } from '../normalizer.js';
 import { runPipeline, type PipelineDeps } from '../../agents/pipeline.js';
-import { getAgents } from '../../agents/registry.js';
+import { getAgents, LIBRARIAN_DOMAIN_ID } from '../../domains/librarian/registry.js';
 import { recordPreference } from '../../feedback/collector.js';
 import { formatResponse, formatPreferencePrompt } from './formatter.js';
 import type { ReviewInput } from '../../core/types.js';
@@ -96,7 +96,9 @@ async function handleReview(
 
   const input: ReviewInput = {
     id: message.id,
+    domainId: LIBRARIAN_DOMAIN_ID,
     content: message.content,
+    source: 'cli',
     language: message.modality === 'code' ? 'typescript' : undefined,
     filePath,
   };

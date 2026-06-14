@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { queryClient } from '../db/client.js';
-import { getAgents } from '../agents/registry.js';
+import { getAgents } from '../domains/librarian/registry.js';
 
 interface UtteranceWithFeedback {
   id: string;
