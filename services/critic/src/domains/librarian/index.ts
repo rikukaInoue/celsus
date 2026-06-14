@@ -13,14 +13,14 @@ import { classifySpeechAct } from '../../agents/classifier.js';
 import { createExtractorsForAgent } from './extractors/interface.js';
 // The agent registry imports the librarian extractors for their registration
 // side effect, so importing it here is enough to populate the extractor registry.
-import { getAgents } from './registry.js';
+import { getAgents, LIBRARIAN_DOMAIN_ID } from './registry.js';
 
 function narrowModality(modality: string): 'code' | 'prose' | 'mixed' {
   return modality === 'code' || modality === 'prose' ? modality : 'mixed';
 }
 
 export const librarianDomain: Domain = {
-  id: 'librarian',
+  id: LIBRARIAN_DOMAIN_ID,
 
   async classify(input: DomainInput): Promise<string> {
     return classifySpeechAct(input.content);
@@ -38,4 +38,4 @@ export const librarianDomain: Domain = {
 registerDomain(librarianDomain);
 
 export { classifySpeechAct, type SpeechAct } from '../../agents/classifier.js';
-export { getAgents, getAgent } from './registry.js';
+export { getAgents, getAgent, LIBRARIAN_DOMAIN_ID } from './registry.js';

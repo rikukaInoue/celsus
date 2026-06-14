@@ -1,7 +1,7 @@
 import type { App } from '@slack/bolt';
 import { normalizeSlackInput } from '../normalizer.js';
 import { runPipeline, type PipelineDeps } from '../../agents/pipeline.js';
-import { getAgents, getAgent } from '../../domains/librarian/registry.js';
+import { getAgents, getAgent, LIBRARIAN_DOMAIN_ID } from '../../domains/librarian/registry.js';
 import { recordFeedback } from '../../feedback/collector.js';
 import { reactionToSignal } from '../../feedback/signals.js';
 import { queryClient } from '../../db/client.js';
@@ -85,7 +85,7 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
 
     const input: ReviewInput = {
       id: message.id,
-      domainId: 'librarian',
+      domainId: LIBRARIAN_DOMAIN_ID,
       content: message.content,
       source: 'slack',
       language: message.modality === 'code' ? 'typescript' : undefined,
@@ -275,7 +275,7 @@ export function setupAgentBot(app: App, agentId: string, deps: PipelineDeps, pee
 
     const input: ReviewInput = {
       id: normalized.id,
-      domainId: 'librarian',
+      domainId: LIBRARIAN_DOMAIN_ID,
       content: normalized.content,
       source: 'slack',
       language: normalized.modality === 'code' ? 'typescript' : undefined,

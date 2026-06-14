@@ -8,6 +8,10 @@ import './extractors/type-info.js';
 import './extractors/design-doc.js';
 import './extractors/plan-context.js';
 
+// Stable id for the librarian domain. Single source of truth so channels don't
+// repeat the 'librarian' string literal when building DomainInput.domainId.
+export const LIBRARIAN_DOMAIN_ID = 'librarian';
+
 let agents: AgentConfig[] | null = null;
 
 export function getAgents(): AgentConfig[] {
